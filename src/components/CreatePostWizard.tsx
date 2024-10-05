@@ -2,9 +2,20 @@ import Image from "next/image";
 import React, { useState } from "react";
 import { useUser } from "@clerk/nextjs";
 import { LoadingPage } from "./Loading";
+import { api } from "@/utils/api";
 
 const CreatePostWizard = () => {
   const { user, isLoaded } = useUser();
+
+  const ctx = api.useUtils();
+
+  const { mutate, isPending: isPosting } = api.post.create.useMutation({
+    onSuccess: () => {
+      setInput("");
+      void ctx.post.getAll.invalidate();
+    },
+  });
+
   const [input, setInput] = useState<string>("");
 
   const handleInput = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -12,8 +23,8 @@ const CreatePostWizard = () => {
   };
 
   const handlePost = () => {
-    // const newPost = api.post.create({ content: input });
-    // console.log(newPost);
+    const post = mutate({ content: input });
+    console.log(post);
   };
 
   if (!isLoaded) return <LoadingPage />;
@@ -32,8 +43,9 @@ const CreatePostWizard = () => {
       <input
         placeholder="Type some emojis!"
         type="text"
-        // value={input}
-        // onChange={handleInput}
+        value={input}
+        onChange={handleInput}
+        disabled={isPosting}
         className="grow bg-transparent text-lg outline-none"
       />
       <button className="btn" onClick={handlePost}>
