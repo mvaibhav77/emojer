@@ -19,7 +19,7 @@ const filterUserForClient = (user: User) => {
 import { Ratelimit } from "@upstash/ratelimit"; // for deno: see above
 import { Redis } from "@upstash/redis"; // see below for cloudflare and fastly adapters
 
-// Create a new ratelimiter, that allows 3 requests per 1 minute
+// Create a new ratelimiter, that allows 1 requests per 30 seconds
 const ratelimit = new Ratelimit({
   redis: Redis.fromEnv(),
   limiter: Ratelimit.slidingWindow(3, "1 m"),
@@ -29,11 +29,15 @@ const ratelimit = new Ratelimit({
 
 export const postRouter = createTRPCRouter({
   create: privateProcedure
-    .input(z.object({ content: z.string().emoji().min(1).max(200) }))
+    .input(
+      z.object({
+        content: z.string().emoji("Only emojis are allowed").min(1).max(200),
+      }),
+    )
     .mutation(async ({ ctx, input }) => {
       const authorId = ctx.currentUser?.userId;
       // rate limiter
-      const {success} = await ratelimit.limit(authorId)
+      const { success } = await ratelimit.limit(authorId);
 
       if (!success) {
         throw new TRPCError({
@@ -41,7 +45,7 @@ export const postRouter = createTRPCRouter({
           message: "Rate limit exceeded",
         });
       }
-      
+
       return ctx.db.post.create({
         data: {
           authorId,
@@ -56,7 +60,7 @@ export const postRouter = createTRPCRouter({
     });
 
     const users = (
-      await clerkClient.users.getUserList({
+      await clerkClient().users.getUserList({
         userId: posts.map((post) => post.authorId),
         limit: 100,
       })

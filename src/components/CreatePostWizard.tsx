@@ -1,8 +1,9 @@
 import Image from "next/image";
 import React, { useState } from "react";
 import { useUser } from "@clerk/nextjs";
-import { LoadingPage } from "./Loading";
+import { Loading, LoadingPage } from "./Loading";
 import { api } from "@/utils/api";
+import { toast } from "react-toastify";
 
 const CreatePostWizard = () => {
   const { user, isLoaded } = useUser();
@@ -13,6 +14,15 @@ const CreatePostWizard = () => {
     onSuccess: () => {
       setInput("");
       void ctx.post.getAll.invalidate();
+    },
+
+    onError: (e) => {
+      const errorMessage = e.data?.zodError?.fieldErrors.content;
+      if (errorMessage) {
+        toast.error(errorMessage[0]);
+      } else {
+        toast.error(e.message || "Failed to post! Please try again later");
+      }
     },
   });
 
@@ -45,12 +55,25 @@ const CreatePostWizard = () => {
         type="text"
         value={input}
         onChange={handleInput}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            handlePost();
+          }
+        }}
         disabled={isPosting}
         className="grow bg-transparent text-lg outline-none"
       />
-      <button className="btn" onClick={handlePost}>
-        Post
-      </button>
+      {input !== "" && !isPosting && (
+        <button className="btn" onClick={handlePost}>
+          Post
+        </button>
+      )}
+
+      {isPosting && (
+        <div className="justify-center- flex items-center">
+          <Loading size={20} />
+        </div>
+      )}
     </div>
   );
 };

@@ -1,11 +1,13 @@
-export const Loading = () => {
+export const Loading = ({ size }: { size?: number }) => {
   return (
     <div role="status">
       <svg
         aria-hidden="true"
-        className="h-10 w-10 animate-spin fill-blue-600 text-gray-200 dark:text-gray-600"
+        className="animate-spin fill-blue-600 text-gray-200 dark:text-gray-600"
         viewBox="0 0 100 101"
         fill="none"
+        width={size ?? 30}
+        height={size ?? 30}
         xmlns="http://www.w3.org/2000/svg"
       >
         <path
