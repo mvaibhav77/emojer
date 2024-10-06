@@ -12,7 +12,7 @@ import superjson from "superjson";
 import { ZodError } from "zod";
 
 import { db } from "@/server/db";
-import { currentUser, getAuth } from "@clerk/nextjs/server";
+import { getAuth } from "@clerk/nextjs/server";
 
 /**
  * 1. CONTEXT
@@ -22,14 +22,13 @@ import { currentUser, getAuth } from "@clerk/nextjs/server";
  * These allow you to access things when processing a request, like the database, the session, etc.
  */
 
-type CreateContextOptions = Record<string, never>;
-
 export const createTRPCContext = (opts: CreateNextContextOptions) => {
   const { req } = opts;
   const user = getAuth(req);
+  const userId = user?.userId;
   return {
     db,
-    currentUser: user,
+    userId: userId,
   };
 };
 
@@ -109,7 +108,7 @@ const timingMiddleware = t.middleware(async ({ next, path }) => {
 export const publicProcedure = t.procedure.use(timingMiddleware);
 
 const enforceUseIsAuthed = t.middleware(async ({ ctx, next }) => {
-  if (!ctx.currentUser?.userId) {
+  if (!ctx?.userId) {
     throw new TRPCError({
       code: "UNAUTHORIZED",
       message: "User is not authenticated",
@@ -118,7 +117,7 @@ const enforceUseIsAuthed = t.middleware(async ({ ctx, next }) => {
 
   return next({
     ctx: {
-      currentUser: ctx.currentUser,
+      userId: ctx.userId,
     },
   });
 });
