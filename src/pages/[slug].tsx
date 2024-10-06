@@ -32,8 +32,6 @@ export default function ProfilePage({ slug }: { slug: string }) {
 
   if (!data) return <div>User not found</div>;
 
-  console.log(data.id);
-
   return (
     <>
       <Head>
