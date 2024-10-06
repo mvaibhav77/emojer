@@ -1,14 +1,11 @@
 import { api } from "@/utils/api";
 import Head from "next/head";
-import { createServerSideHelpers } from "@trpc/react-query/server";
-import superjson from "superjson";
-import { appRouter } from "@/server/api/root";
-import { db } from "@/server/db";
 import { type GetStaticProps } from "next";
 import Page from "@/components/Page";
 import PostView from "@/components/PostView";
 import Image from "next/image";
 import { LoadingPage } from "@/components/Loading";
+import { generateSSGHelper } from "@/server/helpers/ssgHelper";
 
 const ProfileFeed = ({ userId }: { userId: string }) => {
   const { data, isLoading } = api.post.getPostsByUserId.useQuery({
@@ -40,7 +37,7 @@ export default function ProfilePage({ slug }: { slug: string }) {
   return (
     <>
       <Head>
-        <title>Profile</title>
+        <title>{data.username}</title>
       </Head>
       <Page>
         <div className="relative h-40 bg-slate-600">
@@ -64,11 +61,7 @@ export default function ProfilePage({ slug }: { slug: string }) {
 }
 
 export const getStaticProps: GetStaticProps = async (context) => {
-  const ssg = createServerSideHelpers({
-    router: appRouter,
-    ctx: { db, userId: null },
-    transformer: superjson, // optional - adds superjson serialization
-  });
+  const ssg = generateSSGHelper();
 
   const slug = context.params?.slug;
 

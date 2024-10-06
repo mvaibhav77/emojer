@@ -1,15 +1,46 @@
-import Page from "@/components/Page";
+import { api } from "@/utils/api";
 import Head from "next/head";
+import { type GetStaticProps } from "next";
+import Page from "@/components/Page";
 
-// import { api } from "@/utils/api";
+import { generateSSGHelper } from "@/server/helpers/ssgHelper";
+import PostView from "@/components/PostView";
 
-export default function PostPage() {
+export default function SinglePostPage({ id }: { id: string }) {
+  const { data } = api.post.getById.useQuery({
+    id,
+  });
+  if (!data) return <div>404</div>;
+
   return (
     <>
       <Head>
-        <title>Post</title>
+        <title>{`${data.post.content} - @${data.author.username}`}</title>
       </Head>
-      <Page>POST VIEW</Page>
+      <Page>
+        <PostView {...data} />
+      </Page>
     </>
   );
 }
+
+export const getStaticProps: GetStaticProps = async (context) => {
+  const ssg = generateSSGHelper();
+
+  const id = context.params?.id;
+
+  if (typeof id !== "string") throw new Error("no id");
+
+  await ssg.post.getById.prefetch({ id });
+
+  return {
+    props: {
+      trpcState: ssg.dehydrate(),
+      id,
+    },
+  };
+};
+
+export const getStaticPaths = () => {
+  return { paths: [], fallback: "blocking" };
+};
